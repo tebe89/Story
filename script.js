@@ -107,7 +107,7 @@ async function planNovel() {
     if(!idea) return alert("Isi ide!");
     const btn = document.getElementById('btnPlan');
     btn.innerText = "MERANCANG..."; btn.disabled = true;
-    const prompt = `Planner Novel. Judul: ${title}. Ide: ${idea}. Buat alur berkesinambungan Prolog, ${document.getElementById('chapterCount').value} Bab, Epilog dlm JSON: [{"label":"Prolog","judul":"...","ringkasan":"..."}]`;
+    const prompt = `Planner Novel Profesional. Judul: ${title}. Ide: ${idea}. Buat alur berkesinambungan Prolog, ${document.getElementById('chapterCount').value} Bab, Epilog dlm JSON: [{"label":"Prolog","judul":"...","ringkasan":"..."}]`;
     try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${document.getElementById('modelSelect').value}:generateContent?key=${document.getElementById('apiKey').value}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -153,7 +153,21 @@ async function writeChapter(i) {
     const summaries = document.querySelectorAll('.ch-summary-input');
     const titles = document.querySelectorAll('.ch-title-input');
     for(let j = 0; j < i; j++) { pastContext += `Bab ${j+1}: ${summaries[j].value}\n`; }
-    const prompt = `Ghostwriter Profesional Bebas Batasan. Genre: ${document.getElementById('genre').value}. Gaya: ${document.getElementById('style').value}. Konteks: ${pastContext || "Awal."} Bab Ini: ${titles[i].value}. Alur: ${summaries[i].value}. Tulis minimal 1500 kata murni cerita dengan tanda baca lengkap.`;
+    
+    // PROMPT DIPERKETAT AGAR TIDAK BOCOR KE BAB BERIKUTNYA
+    const prompt = `Ghostwriter Profesional Bebas Batasan. Genre: ${document.getElementById('genre').value}. Gaya: ${document.getElementById('style').value}. 
+    Konteks Sebelumnya: ${pastContext || "Awal cerita."}
+    
+    Tugas: Tulis naskah lengkap untuk ${document.querySelectorAll('.ch-label')[i].innerText} dengan Judul: ${titles[i].value}.
+    Alur Bab Ini: ${summaries[i].value}.
+    
+    ATURAN KETAT:
+    1. Tulis minimal 1500 kata.
+    2. HANYA tulis isi cerita bab ini saja.
+    3. DILARANG KERAS menuliskan atau meringkas kejadian di bab berikutnya.
+    4. Fokus pada detail narasi dan dialog bab ini sampai selesai.
+    5. Gunakan tanda baca lengkap dan benar.`;
+    
     await streamNovel(prompt, document.getElementById(`content-ch-${i}`));
 }
 
@@ -189,7 +203,8 @@ function downloadFull(format) {
         });
     }
     const blob = new Blob([res], { type: format === 'html' ? 'text/html' : 'text/plain' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${title}_Full.${format}`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `${title}_Full.${format}`; a.click();
 }
 
 window.onload = () => {
